@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>Mi Horario · Septiembre 2026</title>
+
+<!-- Home-screen / app-like behaviour -->
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mi Horario">
+<meta name="theme-color" content="#12181F">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+
+<style>
+  :root{
+    --bg:#12181F;
+    --surface:#1C242E;
+    --surface-2:#222C38;
+    --line: rgba(246,243,236,0.10);
+    --ink:#F6F3EC;
+    --ink-dim:#9AA5B1;
+    --stamp: ui-monospace, 'SF Mono', 'Courier New', monospace;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+
+    --oficina:#5EA8FF;
+    --tele:#6EDCA0;
+    --vacaciones:#FFC15E;
+    --libre:#B9C2D0;
+  }
+
+  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+  html,body{margin:0; padding:0; background:var(--bg); color:var(--ink); font-family:var(--sans);
+    -webkit-font-smoothing:antialiased; overscroll-behavior-y:contain;}
+  body{ padding-bottom: calc(28px + env(safe-area-inset-bottom)); }
+
+  /* ---------- Header / badge ---------- */
+  header{
+    padding: calc(20px + env(safe-area-inset-top)) 20px 18px;
+    background: linear-gradient(180deg,#171F28 0%, #12181F 100%);
+    border-bottom: 1px solid var(--line);
+    position: sticky; top:0; z-index:20;
+  }
+  .badge-row{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .eyebrow{
+    font-family: var(--stamp); font-size:11px; letter-spacing:.18em; text-transform:uppercase;
+    color: var(--vacaciones); opacity:.9; margin:0 0 4px;
+  }
+  h1{ margin:0; font-size:26px; font-weight:700; letter-spacing:-0.02em; }
+  .employee{
+    font-family: var(--stamp); font-size:11px; color:var(--ink-dim); text-align:right;
+    line-height:1.5; border:1px dashed var(--line); padding:6px 10px; border-radius:8px;
+    transform: rotate(1.2deg);
+  }
+
+  /* Stats strip: mini stamped bars, the signature data device */
+  .stats{ display:flex; gap:8px; margin-top:16px; }
+  .stat{
+    flex:1; background:var(--surface); border:1px solid var(--line); border-radius:10px;
+    padding:8px 6px 10px; text-align:center; position:relative; overflow:hidden;
+  }
+  .stat .n{ font-family:var(--stamp); font-size:20px; font-weight:700; }
+  .stat .l{ font-size:9px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-dim); margin-top:2px;}
+  .stat .bar{ height:3px; border-radius:2px; margin-top:6px; }
+
+  /* ---------- Filters ---------- */
+  .filters{
+    display:flex; gap:8px; padding:14px 20px; overflow-x:auto; scrollbar-width:none;
+    background:var(--bg); position:sticky; top:0; z-index:15;
+  }
+  .filters::-webkit-scrollbar{display:none;}
+  .chip{
+    flex:0 0 auto; font-family:var(--stamp); font-size:12px; letter-spacing:.03em;
+    padding:8px 14px; border-radius:999px; border:1px solid var(--line); color:var(--ink-dim);
+    background:var(--surface); white-space:nowrap;
+  }
+  .chip.active{ color:var(--bg); border-color:transparent; font-weight:700; }
+  .chip[data-type="Todos"].active{ background:var(--ink); }
+  .chip[data-type="Oficina"].active{ background:var(--oficina); }
+  .chip[data-type="Teletrabajo"].active{ background:var(--tele); }
+  .chip[data-type="Vacaciones"].active{ background:var(--vacaciones); }
+  .chip[data-type="Libre"].active{ background:var(--libre); }
+
+  main{ padding: 4px 20px 0; max-width:640px; margin:0 auto; }
+
+  .week-label{
+    font-family:var(--stamp); font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--ink-dim); margin: 22px 2px 10px;
+  }
+
+  /* ---------- Ticket / punch-card day ---------- */
+  .ticket{
+    display:flex; align-items:stretch; background:var(--surface); border:1px solid var(--line);
+    border-radius:14px; margin-bottom:10px; overflow:hidden; position:relative;
+  }
+  .ticket::after{
+    content:""; position:absolute; left:78px; top:0; bottom:0; width:0;
+    border-left:1.5px dashed var(--line);
+  }
+  .ticket .perf{
+    position:absolute; left:72px; width:12px; height:12px; background:var(--bg);
+    border-radius:50%; transform:translateX(-50%);
+  }
+  .ticket .perf.top{ top:-6px; } .ticket .perf.bot{ bottom:-6px; }
+
+  .date-block{
+    width:78px; flex:0 0 78px; display:flex; flex-direction:column; align-items:center;
+    justify-content:center; padding:14px 0; gap:2px;
+  }
+  .date-block .dow{ font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-dim);}
+  .date-block .dnum{ font-family:var(--stamp); font-size:24px; font-weight:700; }
+
+  .info-block{ flex:1; display:flex; align-items:center; justify-content:space-between; padding:12px 16px 12px 20px; gap:10px;}
+  .type-tag{ display:flex; align-items:center; gap:8px; }
+  .icon{ width:22px; height:22px; flex:0 0 22px; }
+  .type-name{ font-size:14px; font-weight:600; }
+  .hours{ font-family:var(--stamp); font-size:13px; color:var(--ink-dim); text-align:right; }
+
+  .ticket.type-Oficina .date-block{ background: color-mix(in srgb, var(--oficina) 14%, transparent); }
+  .ticket.type-Teletrabajo .date-block{ background: color-mix(in srgb, var(--tele) 14%, transparent); }
+  .ticket.type-Vacaciones .date-block{ background: color-mix(in srgb, var(--vacaciones) 14%, transparent); }
+  .ticket.type-Libre .date-block{ background: color-mix(in srgb, var(--libre) 10%, transparent); }
+
+  .ticket.type-Oficina .type-name{ color:var(--oficina); }
+  .ticket.type-Teletrabajo .type-name{ color:var(--tele); }
+  .ticket.type-Vacaciones .type-name{ color:var(--vacaciones); }
+  .ticket.type-Libre .type-name{ color:var(--libre); }
+
+  .ticket.hidden{ display:none; }
+
+  footer{
+    text-align:center; padding: 26px 20px 6px; color:var(--ink-dim); font-size:11px;
+    font-family: var(--stamp); letter-spacing:.04em;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="badge-row">
+    <div>
+      <p class="eyebrow">Ficha horaria</p>
+      <h1>Septiembre 2026</h1>
+    </div>
+    <div class="employee">FRANCISCO<br>AMAYA BERBEN</div>
+  </div>
+
+  <div class="stats" id="stats"></div>
+</header>
+
+<div class="filters" id="filters"></div>
+
+<main id="main"></main>
+
+<footer>30 días · TP Employee</footer>
+
+<script>
+const ICONS = {
+  Oficina: '<svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="3" width="16" height="18" rx="1.5" stroke="currentColor" stroke-width="1.6"/><path d="M8 7h2M14 7h2M8 11h2M14 11h2M8 15h2M14 15h2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M10 21v-4h4v4" stroke="currentColor" stroke-width="1.6"/></svg>',
+  Teletrabajo: '<svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 11.5 12 4l8 7.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 10v9a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-9" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M10 20v-5h4v5" stroke="currentColor" stroke-width="1.6"/></svg>',
+  Vacaciones: '<svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 15l6.5-2.2L14 4.5c.5-.9 1.9-.5 1.8.5l-1.4 7.7 4.9-1.6c.9-.3 1.6.8 1 1.5l-3.2 3.5-6.8 2.2M9 12l-2.5 5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 20h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
+  Libre: '<svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 11V8a5 5 0 0 1 9.5-2.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M7 11l-2.2 1.2a1.5 1.5 0 0 0-.6 2l2.6 5.3a2 2 0 0 0 1.8 1.1H16a3 3 0 0 0 3-3v-2.2c0-.9-.5-1.7-1.3-2.1L14 11.3V9.5a1.5 1.5 0 0 0-3 0V11" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg>'
+};
+
+const DOW = ["dom","lun","mar","mié","jue","vie","sáb"];
+
+const data = [
+ {d:"01/09/2026",w:"Semana36",tipo:"Libre",ini:"15:00",fin:"23:00"},
+ {d:"02/09/2026",w:"Semana36",tipo:"Teletrabajo",ini:"15:00",fin:"23:00"},
+ {d:"03/09/2026",w:"Semana36",tipo:"Teletrabajo",ini:"15:00",fin:"23:00"},
+ {d:"04/09/2026",w:"Semana36",tipo:"Libre",ini:"16:00",fin:"23:00"},
+ {d:"05/09/2026",w:"Semana36",tipo:"Teletrabajo",ini:"15:00",fin:"23:00"},
+ {d:"06/09/2026",w:"Semana36",tipo:"Teletrabajo",ini:"15:00",fin:"23:00"},
+ {d:"07/09/2026",w:"Semana37",tipo:"Oficina",ini:"15:00",fin:"23:00"},
+ {d:"08/09/2026",w:"Semana37",tipo:"Oficina",ini:"15:00",fin:"23:00"},
+ {d:"09/09/2026",w:"Semana37",tipo:"Oficina",ini:"15:00",fin:"22:00"},
+ {d:"10/09/2026",w:"Semana37",tipo:"Oficina",ini:"15:00",fin:"23:00"},
+ {d:"11/09/2026",w:"Semana37",tipo:"Oficina",ini:"15:00",fin:"23:00"},
+ {d:"12/09/2026",w:"Semana37",tipo:"Libre",ini:"15:00",fin:"23:00"},
+ {d:"13/09/2026",w:"Semana37",tipo:"Libre",ini:"15:00",fin:"23:00"},
+ {d:"14/09/2026",w:"Semana38",tipo:"Teletrabajo",ini:"15:30",fin:"23:00"},
+ {d:"15/09/2026",w:"Semana38",tipo:"Teletrabajo",ini:"15:30",fin:"23:00"},
+ {d:"16/09/2026",w:"Semana38",tipo:"Teletrabajo",ini:"15:30",fin:"23:00"},
+ {d:"17/09/2026",w:"Semana38",tipo:"Teletrabajo",ini:"15:30",fin:"23:00"},
+ {d:"18/09/2026",w:"Semana38",tipo:"Teletrabajo",ini:"15:30",fin:"23:00"},
+ {d:"19/09/2026",w:"Semana38",tipo:"Libre",ini:"15:00",fin:"23:00"},
+ {d:"20/09/2026",w:"Semana38",tipo:"Libre",ini:"15:00",fin:"23:00"},
+ {d:"21/09/2026",w:"Semana39",tipo:"Libre",ini:"15:00",fin:"23:00"},
+ {d:"22/09/2026",w:"Semana39",tipo:"Oficina",ini:"15:00",fin:"23:00"},
+ {d:"23/09/2026",w:"Semana39",tipo:"Libre",ini:"15:00",fin:"23:00"},
+ {d:"24/09/2026",w:"Semana39",tipo:"Libre",ini:"15:00",fin:"23:00"},
+ {d:"25/09/2026",w:"Semana39",tipo:"Oficina",ini:"15:00",fin:"23:00"},
+ {d:"26/09/2026",w:"Semana39",tipo:"Teletrabajo",ini:"15:00",fin:"23:00"},
+ {d:"27/09/2026",w:"Semana39",tipo:"Teletrabajo",ini:"15:00",fin:"22:30"},
+ {d:"28/09/2026",w:"Semana40",tipo:"Teletrabajo",ini:"15:00",fin:"23:00"},
+ {d:"29/09/2026",w:"Semana40",tipo:"Teletrabajo",ini:"15:00",fin:"23:00"},
+ {d:"30/09/2026",w:"Semana40",tipo:"Teletrabajo",ini:"15:00",fin:"23:00"},
+];
+
+function dowOf(dstr){
+  const [dd,mm,yy] = dstr.split("/").map(Number);
+  return DOW[new Date(yy,mm-1,dd).getDay()];
+}
+
+// ---- stats ----
+const counts = {};
+data.forEach(r=>counts[r.tipo]=(counts[r.tipo]||0)+1);
+const statsEl = document.getElementById("stats");
+const colorVar = {Oficina:"--oficina",Teletrabajo:"--tele",Vacaciones:"--vacaciones",Libre:"--libre"};
+Object.keys(colorVar).forEach(t=>{
+  const c = counts[t]||0;
+  const div = document.createElement("div");
+  div.className="stat";
+  div.innerHTML = `<div class="n" style="color:var(${colorVar[t]})">${c}</div><div class="l">${t}</div><div class="bar" style="background:var(${colorVar[t]});width:${Math.max(c*8,10)}%; margin-left:auto; margin-right:auto;"></div>`;
+  statsEl.appendChild(div);
+});
+
+// ---- filters ----
+const filtersEl = document.getElementById("filters");
+const types = ["Todos","Oficina","Teletrabajo","Vacaciones","Libre"];
+let active = "Todos";
+types.forEach(t=>{
+  const chip = document.createElement("div");
+  chip.className = "chip" + (t===active?" active":"");
+  chip.dataset.type = t;
+  chip.textContent = t;
+  chip.onclick = ()=>{
+    active = t;
+    document.querySelectorAll(".chip").forEach(c=>c.classList.toggle("active", c.dataset.type===active));
+    document.querySelectorAll(".ticket").forEach(tk=>{
+      tk.classList.toggle("hidden", active!=="Todos" && !tk.classList.contains("type-"+active));
+    });
+  };
+  filtersEl.appendChild(chip);
+});
+
+// ---- main list ----
+const main = document.getElementById("main");
+let currentWeek = null;
+data.forEach(r=>{
+  if(r.w !== currentWeek){
+    currentWeek = r.w;
+    const label = document.createElement("div");
+    label.className = "week-label";
+    label.textContent = currentWeek.replace("Semana","Semana ");
+    main.appendChild(label);
+  }
+  const dd = r.d.split("/")[0];
+  const ticket = document.createElement("div");
+  ticket.className = `ticket type-${r.tipo}`;
+  ticket.innerHTML = `
+    <span class="perf top"></span><span class="perf bot"></span>
+    <div class="date-block">
+      <div class="dow">${dowOf(r.d)}</div>
+      <div class="dnum">${dd}</div>
+    </div>
+    <div class="info-block">
+      <div class="type-tag">${ICONS[r.tipo]}<span class="type-name">${r.tipo}</span></div>
+      <div class="hours">${r.ini}&nbsp;–&nbsp;${r.fin}</div>
+    </div>
+  `;
+  main.appendChild(ticket);
+});
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
